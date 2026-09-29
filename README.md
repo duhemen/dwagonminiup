@@ -1404,7 +1404,7 @@ SOFTWARE.
 
 **DwagonMiniUp** — *Membangun Indonesia Digital dari Sabang sampai Merauke*
 
-Dibuat dengan ❤️ oleh **[Mashul Aditama Pradana](https://github.com/yourusername)** dengan bantuan **[DeepSeek](https://deepseek.com)**
+Dibuat dengan ❤️ oleh **LUCA** dengan bantuan **[DeepSeek](https://deepseek.com)**
 
 ⭐ Jangan lupa **star** repository ini jika bermanfaat! ⭐
 
