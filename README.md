@@ -1365,7 +1365,7 @@ Ribuan developer di balik:
 <!-- ALL-CONTRIBUTORS-LIST:START -->
 | Avatar | Name | Role |
 |---|---|---|
-| 🧑 | **Mashul Aditama Pradana** | Founder & Lead Developer |
+| 🧑 | **LUCA** | Founder & Lead Developer |
 | 🤖 | **DeepSeek** | AI Pair Programmer |
 | 🌐 | **Google AI Mode** | Research Assistant |
 <!-- ALL-CONTRIBUTORS-LIST:END -->
