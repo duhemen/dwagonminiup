@@ -1,0 +1,23 @@
+{
+  "name": "edge-node",
+  "version": "0.1.0",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "tsx watch --env-file=.env src/server.ts",
+    "dev:kalimantan": "tsx watch --env-file=.env src/server.ts",
+    "dev:sumatera": "tsx watch --env-file=.env src/server.ts",
+    "dev:sulawesi": "tsx watch --env-file=.env src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "@fastify/jwt": "^8.0.1",
+    "bullmq": "^5.13.2",
+    "fastify": "^4.28.1",
+    "ioredis": "^5.4.1"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.2"
+  }
+}

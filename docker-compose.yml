@@ -1,0 +1,48 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: dwagon-postgres
+    environment:
+      POSTGRES_USER: dwagon
+      POSTGRES_PASSWORD: dwagon
+      POSTGRES_DB: dwagon
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: dwagon-redis
+    ports:
+      - "6379:6379"
+
+  central-server:
+    build: ./apps/central-server
+    container_name: dwagon-central
+    ports:
+      - "4000:4000"
+    environment:
+      DATABASE_URL: postgresql://dwagon:dwagon@postgres:5432/dwagon
+      JWT_SECRET: supersecret
+    depends_on:
+      - postgres
+      - redis
+
+  edge-node:
+    build: ./apps/edge-node
+    container_name: dwagon-edge-kalimantan
+    ports:
+      - "4001:4001"
+    environment:
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: supersecret
+      REGION: kalimantan
+    depends_on:
+      - redis
+      - central-server
+
+volumes:
+  pgdata:

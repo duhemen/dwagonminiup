@@ -1,0 +1,815 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  name           String?
+  password       String
+  nip            String?   @unique
+  jabatan        String?
+  unitKerja      String?
+  pendidikan     String?
+  role           String    @default("pegawai")
+  region         String?
+  assignedRegion String?
+  regionLocked   Boolean   @default(false)
+  lastIP         String?
+  lastLoginAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  usulan              Usulan[]              @relation("UsulanPegawai")
+  skpList             SKP[]
+  enrollments         Enrollment[]
+  notifs              Notification[]
+  activities          ActivityLog[]
+  pushSubs            PushSubscription[]
+  knowledgeItems      KnowledgeItem[]
+  knowledgeComments   KnowledgeComment[]
+  knowledgeLikes      KnowledgeLike[]
+  elearningEnrolls    ElearningEnrollment[]
+}
+
+model Pelatihan {
+  id            String   @id @default(cuid())
+  nama          String
+  kategori      String
+  jp            Int
+  penyelenggara String
+  deskripsi     String?
+  rating        Float    @default(0)
+  totalPeserta  Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  usulan      Usulan[]
+  enrollments Enrollment[]
+}
+
+model Usulan {
+  id          String   @id @default(cuid())
+  userId      String
+  pelatihanId String
+  kategori    String
+  status      String   @default("menunggu")
+  tanggal     DateTime @default(now())
+  catatan     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  edgeId      String?
+  edgeRegion  String?
+  signature   String?
+
+  user      User       @relation("UsulanPegawai", fields: [userId], references: [id])
+  pelatihan Pelatihan  @relation(fields: [pelatihanId], references: [id])
+  approvals Approval[]
+}
+
+model Approval {
+  id        String    @id @default(cuid())
+  usulanId  String
+  stage     String
+  status    String    @default("menunggu")
+  catatan   String?
+  decidedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  usulan Usulan @relation(fields: [usulanId], references: [id], onDelete: Cascade)
+  @@unique([usulanId, stage])
+}
+
+model Enrollment {
+  id          String   @id @default(cuid())
+  userId      String
+  pelatihanId String
+  progress    Int      @default(0)
+  status      String   @default("aktif")
+  enrolledAt  DateTime @default(now())
+
+  user      User      @relation(fields: [userId], references: [id])
+  pelatihan Pelatihan @relation(fields: [pelatihanId], references: [id])
+  @@unique([userId, pelatihanId])
+}
+
+model EdgeNode {
+  id              String   @id @default(cuid())
+  region          String   @unique
+  publicKey       String
+  fingerprint     String   @unique
+  endpoint        String?
+  registeredAt    DateTime @default(now())
+  lastHeartbeat   DateTime @default(now())
+  status          String   @default("active")
+  totalSyncJobs   Int      @default(0)
+  totalSyncFailed Int      @default(0)
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  message   String
+  detail    String?
+  dataJson  String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, read])
+}
+
+model ActivityLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  targetType String?
+  targetId   String?
+  metaJson   String?
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  @@index([userId])
+  @@index([action])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+}
+
+// ============================================================
+// KLOP - KNOWLEDGE MODULE (Sprint 19.1)
+// ============================================================
+
+model KnowledgeCategory {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  icon        String
+  color       String
+  description String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  items KnowledgeItem[]
+  @@index([order])
+}
+
+model KnowledgeItem {
+  id            String    @id @default(cuid())
+  title         String
+  slug          String    @unique
+  description   String    @db.Text
+  content       String?   @db.Text
+  type          String
+  categoryId    String
+  authorId      String
+  thumbnail     String?
+  fileUrl       String?
+  videoUrl      String?
+  duration      String?
+  fileSize      String?
+  tags          String[]  @default([])
+  views         Int       @default(0)
+  likes         Int       @default(0)
+  commentsCount Int       @default(0)
+  publishedAt   DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  region        String?
+  signature     String?
+
+  category KnowledgeCategory  @relation(fields: [categoryId], references: [id])
+  author   User               @relation(fields: [authorId], references: [id])
+  comments KnowledgeComment[]
+  likedBy  KnowledgeLike[]
+
+  @@index([categoryId])
+  @@index([type])
+  @@index([publishedAt])
+  @@index([views])
+  @@index([likes])
+}
+
+model KnowledgeComment {
+  id        String   @id @default(cuid())
+  itemId    String
+  userId    String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  item KnowledgeItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  user User          @relation(fields: [userId], references: [id])
+  @@index([itemId])
+}
+
+model KnowledgeLike {
+  id        String   @id @default(cuid())
+  itemId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  item KnowledgeItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  user User          @relation(fields: [userId], references: [id])
+  @@unique([itemId, userId])
+}
+
+// ============================================================
+// KLOP - E-LEARNING MODULE (Sprint 19.2)
+// ============================================================
+
+model ElearningCategory {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  icon        String
+  description String?
+  order       Int      @default(0)
+
+  courses ElearningCourse[]
+  @@index([order])
+}
+
+model ElearningCourse {
+  id            String    @id @default(cuid())
+  title         String
+  slug          String    @unique
+  description   String    @db.Text
+  categoryId    String
+  penyelenggara String
+  type          String    // "Pelatihan Jarak Jauh (Distance Learning)" | "Seminar, Konferensi, Sarasehan" | "Pelatihan Teknis" | "Blended Learning" | "E-Learning"
+  accessType    String    // "Terbuka" | "Pengajuan" | "Undangan"
+  status        String    // "Dibuka" | "Dimulai" | "Akan Datang" | "Sudah Berakhir"
+  poster        String?
+  totalJP       Int       @default(0)
+  totalHours    Int       @default(0)
+  startDate     DateTime
+  endDate       DateTime
+  year          Int
+  kuota         Int       @default(0)
+  enrolled      Int       @default(0)
+  rating        Float     @default(0)
+  region        String?
+  signature     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  category    ElearningCategory      @relation(fields: [categoryId], references: [id])
+  enrollments ElearningEnrollment[]
+
+  @@index([categoryId])
+  @@index([status])
+  @@index([accessType])
+  @@index([year])
+}
+
+model ElearningEnrollment {
+  id         String    @id @default(cuid())
+  courseId   String
+  userId     String
+  progress   Int       @default(0)
+  status     String    @default("aktif") // "aktif" | "selesai" | "gagal"
+  score      Float?
+  hasCert    Boolean   @default(false)
+  enrolledAt DateTime  @default(now())
+  completedAt DateTime?
+
+  course ElearningCourse @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user   User            @relation(fields: [userId], references: [id])
+
+  @@unique([courseId, userId])
+  @@index([userId])
+}
+// ============================================================
+// KLOP - TALKSHOW MODULE (Sprint 19.3)
+// ============================================================
+
+model TalkshowEpisode {
+  id           String   @id @default(cuid())
+  episodeNo    Int      @unique
+  title        String
+  slug         String   @unique
+  description  String   @db.Text
+  poster       String?
+  videoUrl     String?
+  youtubeId    String?
+  host         String?
+  narasumber   String[] @default([])
+  category     String?
+  duration     String?
+  airedAt      DateTime
+  views        Int      @default(0)
+  likes        Int      @default(0)
+  commentsCount Int     @default(0)
+  region       String?
+  signature    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([episodeNo])
+  @@index([airedAt])
+}
+
+// ============================================================
+// KLOP - FORUM MODULE (Sprint 19.3)
+// ============================================================
+
+model ForumTopic {
+  id           String    @id @default(cuid())
+  title        String
+  slug         String    @unique
+  content      String    @db.Text
+  category     String?
+  authorId     String
+  authorName   String?
+  isPinned     Boolean   @default(false)
+  views        Int       @default(0)
+  likes        Int       @default(0)
+  repliesCount Int       @default(0)
+  lastReplyAt  DateTime?
+  region       String?
+  signature    String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  replies ForumReply[]
+
+  @@index([createdAt])
+  @@index([views])
+  @@index([lastReplyAt])
+}
+
+model ForumReply {
+  id         String    @id @default(cuid())
+  topicId    String
+  authorId   String
+  authorName String?
+  content    String    @db.Text
+  parentId   String?
+  likes      Int       @default(0)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  topic  ForumTopic  @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  parent ForumReply? @relation("ReplyNesting", fields: [parentId], references: [id], onDelete: Cascade)
+  childs ForumReply[] @relation("ReplyNesting")
+
+  @@index([topicId])
+  @@index([parentId])
+}
+
+// ============================================================
+// KLOP - JURNAL MODULE (Sprint 19.4)
+// ============================================================
+
+model Jurnal {
+  id           String   @id @default(cuid())
+  title        String
+  slug         String   @unique
+  bidang       String
+  publisher    String
+  issn         String?
+  eissn        String?
+  coverColor   String   @default("#3b82f6")
+  description  String?  @db.Text
+  frequency    String?
+  year         Int
+  volume       String?
+  edition      String?
+  language     String   @default("id")
+  views        Int      @default(0)
+  downloads    Int      @default(0)
+  articlesCount Int     @default(0)
+  region       String?
+  signature    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  articles JurnalArticle[]
+
+  @@index([bidang])
+  @@index([year])
+}
+
+model JurnalArticle {
+  id          String   @id @default(cuid())
+  jurnalId    String
+  title       String
+  authors     String[] @default([])
+  abstract    String   @db.Text
+  keywords    String[] @default([])
+  pages       String?
+  doi         String?
+  pdfUrl      String?
+  publishedAt DateTime @default(now())
+  views       Int      @default(0)
+  downloads   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  jurnal Jurnal @relation(fields: [jurnalId], references: [id], onDelete: Cascade)
+
+  @@index([jurnalId])
+}
+
+// ============================================================
+// KLOP - KOMUNITAS MODULE (Sprint 19.4)
+// ============================================================
+
+model CommunityWork {
+  id           String    @id @default(cuid())
+  title        String
+  slug         String    @unique
+  description  String    @db.Text
+  content      String?   @db.Text
+  type         String    // "Dokumen" | "Video" | "Foto" | "YouTube"
+  status       String    @default("Draft") // "Draft" | "Menunggu Validasi" | "Published" | "Undangan"
+  category     String?
+  thumbnail    String?
+  fileUrl      String?
+  authorId     String
+  authorName   String?
+  authorUnit   String?
+  views        Int       @default(0)
+  likes        Int       @default(0)
+  commentsCount Int      @default(0)
+  publishedAt  DateTime?
+  region       String?
+  signature    String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([status])
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+// ============================================================
+// E-KINERJA - SKP MODULE (Sprint 19.5)
+// ============================================================
+
+model SKP {
+  id              String    @id @default(cuid())
+  userId          String
+  tahun           Int
+  periodeMulai    DateTime
+  periodeSelesai  DateTime
+  jabatan         String
+  unitKerja       String
+  atasanNama      String?
+  atasanNip       String?
+  atasanJabatan   String?
+  pejabatNama     String?
+  pejabatNip      String?
+  pejabatJabatan  String?
+  status          String    @default("Draft") // Draft | Diajukan | Disetujui | Ditolak
+  predikatAkhir   String?   // Sangat Baik | Baik | Butuh Perbaikan | Kurang | Sangat Kurang
+  catatan         String?   @db.Text
+  region          String?
+  signature       String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rhkList  SKPRHK[]
+  evaluasi SKPEvaluation[]
+
+  @@index([userId])
+  @@index([tahun])
+  @@index([status])
+}
+
+model SKPRHK {
+  id                  String   @id @default(cuid())
+  skpId               String
+  urutan              Int      @default(0)
+  rencanaHasilKerja   String   @db.Text
+  indikator           String[] @default([])
+  target              String?
+  satuan              String?
+  cascading           Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  skp SKP @relation(fields: [skpId], references: [id], onDelete: Cascade)
+
+  @@index([skpId])
+}
+
+model SKPEvaluation {
+  id            String    @id @default(cuid())
+  skpId         String
+  triwulan      Int       // 1, 2, 3, 4
+  predikat      String?   // Sangat Baik | Baik | Butuh Perbaikan | Kurang | Sangat Kurang
+  nilai         Float?
+  catatan       String?   @db.Text
+  dinilaiOleh   String?
+  dinilaiAt     DateTime?
+  status        String    @default("belum") // belum | menunggu | sudah
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  skp SKP @relation(fields: [skpId], references: [id], onDelete: Cascade)
+
+  @@unique([skpId, triwulan])
+  @@index([skpId])
+}
+
+// ============================================================
+// E-KINERJA - CETAK & HK MODULE (Sprint 19.6)
+// ============================================================
+
+model SKPDocument {
+  id           String    @id @default(cuid())
+  skpId        String?
+  userId       String
+  kategori     String    // Perencanaan | Pelaksanaan | Evaluasi
+  subKategori  String?   // Tw1 | Tw2 | Tw3 | Tw4 | Akhir
+  title        String
+  fileUrl      String?
+  fileName     String?
+  fileSize     String?
+  status       String    @default("Tersedia")
+  downloadedAt DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([userId])
+  @@index([kategori])
+}
+
+model HKPengajuan {
+  id              String    @id @default(cuid())
+  userId          String
+  skpId           String?
+  tahun           Int
+  periode         String
+  alasan          String    @db.Text
+  kategori        String    // Keterlambatan | Nilai Tidak Sesuai | Beban Berlebih | Lainnya
+  status          String    @default("Draft") // Draft | Diajukan | Diproses | Selesai | Ditolak
+  tanggapan       String?   @db.Text
+  catatanAtasan   String?   @db.Text
+  submittedAt     DateTime?
+  resolvedAt      DateTime?
+  region          String?
+  signature       String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+// ============================================================
+// E-KINERJA - TTE MODULE (Sprint 19.7)
+// ============================================================
+
+model TTEDocument {
+  id           String    @id @default(cuid())
+  userId       String
+  fileName     String
+  fileSize     String?
+  fileUrl      String?
+  status       String    @default("Unsigned") // Unsigned | Signed | Failed
+  mode         String    @default("single") // single | bulk
+  passphrase   String?   // stored as hash
+  certificate  String?   // serial number
+  signedAt     DateTime?
+  expiresAt    DateTime?
+  docHash      String?   // SHA-256
+  region       String?
+  signature    String?
+  createdAt    DateTime  @default(now())
+
+  @@index([userId])
+  @@index([status])
+}
+
+// ============================================================
+// E-KINERJA - PENGATURAN + UNDUH + VIDEO (Sprint 19.8)
+// ============================================================
+
+model PengaturanAtasan {
+  id                String   @id @default(cuid())
+  userId            String
+  tahun             Int
+  periode           String
+  jabatan           String
+  unitKerja         String
+  atasanNama        String?
+  atasanNip         String?
+  atasanJabatan     String?
+  pejabatNama       String?
+  pejabatNip        String?
+  pejabatJabatan    String?
+  pejabatTtdNama    String?
+  pejabatTtdNip     String?
+  pejabatTtdJabatan String?
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([userId, tahun])
+  @@index([userId])
+}
+
+model DownloadDoc {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  category    String   // Panduan | Form | Peraturan | Video
+  fileName    String
+  fileSize    String?
+  fileUrl     String?
+  year        Int?
+  views       Int      @default(0)
+  downloads   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@index([category])
+}
+
+model VideoTutorial {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  youtubeId   String?
+  thumbnail   String?
+  duration    String?
+  category    String?
+  views       Int      @default(0)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@index([order])
+}
+
+// ============================================================
+// E-KINERJA - REKAP KOMPETENSI (Sprint 19.9)
+// ============================================================
+
+model RekapKompetensi {
+  id          String   @id @default(cuid())
+  userId      String
+  uraian      String   @db.Text
+  sumberData  String
+  tglMulai    DateTime?
+  tglSelesai  DateTime?
+  jumlahJP    Int      @default(0)
+  noSertifikat String?
+  lokasi      String?
+  tglUpdate   DateTime @default(now())
+  arsipUrl    String?
+  tahun       Int
+  region      String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([tahun])
+}
+
+// ============================================================
+// KARYASISWA (Sprint 19.10)
+// ============================================================
+
+model Karyasiswa {
+  id             String    @id @default(cuid())
+  userId         String
+  program        String
+  universitas    String
+  jenjang        String
+  lokasiStudi    String
+  tanggalPengajuan DateTime
+  status         String    @default("Draft") // Draft | Menunggu Validasi | Disetujui | Ditolak
+  tahunAkademik  Int
+  durasi         String?
+  catatan        String?   @db.Text
+  isBeasiswa     Boolean   @default(false)
+  pengirim       String?
+  region         String?
+  signature      String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+// ============================================================
+// SPASI - Venue Booking (Sprint 19.11)
+// ============================================================
+
+model Venue {
+  id          String    @id @default(cuid())
+  nama        String
+  slug        String    @unique
+  tipe        String    // Asrama | Ruang Kelas | Ruang Wawancara | Aula | Lainnya
+  unitId      String
+  kapasitas   Int
+  deskripsi   String    @db.Text
+  harga       String    @default("Gratis")
+  foto        String?
+  fasilitas   String[]  @default([])
+  lokasi      String?
+  isAvailable Boolean   @default(true)
+  region      String?
+  createdAt   DateTime  @default(now())
+
+  bookings VenueBooking[]
+
+  @@index([tipe])
+}
+
+model VenueBooking {
+  id          String    @id @default(cuid())
+  venueId     String
+  userId      String
+  tanggalMulai DateTime
+  tanggalSelesai DateTime
+  keperluan   String    @db.Text
+  jumlahOrang Int
+  status      String    @default("Menunggu") // Menunggu | Disetujui | Ditolak | Selesai
+  catatan     String?   @db.Text
+  region      String?
+  signature   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  venue Venue @relation(fields: [venueId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([venueId])
+  @@index([status])
+}
+
+// ============================================================
+// TICKETING DATIN (Sprint 19.12)
+// ============================================================
+
+model Ticket {
+  id          String    @id @default(cuid())
+  userId      String
+  ticketNo    String    @unique
+  judul       String
+  kategori    String
+  deskripsi   String    @db.Text
+  prioritas   String    @default("Normal") // Rendah | Normal | Tinggi | Urgent
+  status      String    @default("Terbuka") // Terbuka | Diproses | Selesai | Ditutup
+  assignedTo  String?
+  catatan     String?   @db.Text
+  attachment  String?
+  resolvedAt  DateTime?
+  region      String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+// ============================================================
+// E-KINERJA - PEMBINAAN KINERJA (Sprint 19.13)
+// ============================================================
+
+model PembinaanKinerja {
+  id                String   @id @default(cuid())
+  userId            String
+  pembinaId         String?
+  pembinaNama       String?
+  pembinaJabatan    String?
+  tahun             Int
+  tipe              String   // Bimbingan | Konseling
+  teknik            String?  // Mentoring/Training | Coaching | Directing | Counseling/Motivating
+  rencanaHasilKerja String   @db.Text
+  periode           String
+  tanggal           DateTime @default(now())
+  catatan           String?  @db.Text
+  hasil             String?  @db.Text
+  tindakLanjut      String?  @db.Text
+  status            String   @default("Terjadwal") // Terjadwal | Berlangsung | Selesai
+  region            String?
+  signature         String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([userId])
+  @@index([tahun])
+  @@index([tipe])
+}

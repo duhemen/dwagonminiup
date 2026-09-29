@@ -1,0 +1,72 @@
+{
+  "name": "DwagonMiniUp — Portal Kepegawaian",
+  "short_name": "DwagonMiniUp",
+  "description": "Sistem Hybrid Edge Deployment untuk Layanan Kepegawaian Indonesia",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#2563eb",
+  "background_color": "#f8fafc",
+  "categories": ["business", "productivity", "government"],
+  "lang": "id-ID",
+  "dir": "ltr",
+  "icons": [
+    { "src": "/icon-72.png",  "sizes": "72x72",   "type": "image/png", "purpose": "any" },
+    { "src": "/icon-96.png",  "sizes": "96x96",   "type": "image/png", "purpose": "any" },
+    { "src": "/icon-128.png", "sizes": "128x128", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-144.png", "sizes": "144x144", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-152.png", "sizes": "152x152", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-384.png", "sizes": "384x384", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Persetujuan Usulan",
+      "short_name": "Approval",
+      "description": "Lihat usulan yang menunggu persetujuan",
+      "url": "/approval",
+      "icons": [{ "src": "/icon-96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Notifikasi",
+      "short_name": "Notif",
+      "description": "Cek notifikasi terbaru",
+      "url": "/notifications",
+      "icons": [{ "src": "/icon-96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "E-HRD",
+      "short_name": "E-HRD",
+      "description": "Sistem manajemen SDM",
+      "url": "/ehrd",
+      "icons": [{ "src": "/icon-96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Live Dashboard",
+      "short_name": "Metrics",
+      "description": "Monitoring metrics real-time",
+      "url": "/live-dashboard",
+      "icons": [{ "src": "/icon-96.png", "sizes": "96x96" }]
+    }
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+dwagon",
+      "url": "/open?target=%s"
+    }
+  ]
+}

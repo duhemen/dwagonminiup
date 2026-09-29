@@ -1,0 +1,279 @@
+version: "3.8"
+
+services:
+  # ============ DATABASE ============
+  postgres:
+    image: postgres:15-alpine
+    container_name: dwagon-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-dwagon}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?required}
+      POSTGRES_DB: ${POSTGRES_DB:-dwagon}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backups:/backups
+    networks:
+      - dwagon-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dwagon} -d ${POSTGRES_DB:-dwagon}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============ CACHE / QUEUE ============
+  redis:
+    image: redis:7-alpine
+    container_name: dwagon-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - dwagon-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+  # ============ CENTRAL SERVER ============
+  central-server:
+    build:
+      context: .
+      dockerfile: apps/central-server/Dockerfile
+    image: dwagon/central-server:${IMAGE_TAG:-latest}
+    container_name: dwagon-central
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-dwagon}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-dwagon}
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:?required}
+      PORT: 4000
+    volumes:
+      - central_keys:/app/apps/central-server/.keys
+      - central_vapid:/app/apps/central-server/.vapid.json
+    networks:
+      - dwagon-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+  # ============ EDGE NODES (1 per region) ============
+  edge-sumatera:
+    build:
+      context: .
+      dockerfile: apps/edge-node/Dockerfile
+    image: dwagon/edge-node:${IMAGE_TAG:-latest}
+    container_name: dwagon-edge-sumatera
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 4001
+      REGION: sumatera
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:?required}
+      CENTRAL_URL: http://central-server:4000
+    volumes:
+      - edge_sumatera_keys:/app/apps/edge-node/.keys
+    networks:
+      - dwagon-net
+    depends_on:
+      - redis
+      - central-server
+
+  edge-jawa:
+    build:
+      context: .
+      dockerfile: apps/edge-node/Dockerfile
+    image: dwagon/edge-node:${IMAGE_TAG:-latest}
+    container_name: dwagon-edge-jawa
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 4002
+      REGION: jawa
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:?required}
+      CENTRAL_URL: http://central-server:4000
+    volumes:
+      - edge_jawa_keys:/app/apps/edge-node/.keys
+    networks:
+      - dwagon-net
+    depends_on: [redis, central-server]
+
+  edge-kalimantan:
+    build:
+      context: .
+      dockerfile: apps/edge-node/Dockerfile
+    image: dwagon/edge-node:${IMAGE_TAG:-latest}
+    container_name: dwagon-edge-kalimantan
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 4003
+      REGION: kalimantan
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:?required}
+      CENTRAL_URL: http://central-server:4000
+    volumes:
+      - edge_kalimantan_keys:/app/apps/edge-node/.keys
+    networks: [dwagon-net]
+    depends_on: [redis, central-server]
+
+  edge-bali-nusra:
+    build:
+      context: .
+      dockerfile: apps/edge-node/Dockerfile
+    image: dwagon/edge-node:${IMAGE_TAG:-latest}
+    container_name: dwagon-edge-bali-nusra
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 4004
+      REGION: bali-nusra
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:?required}
+      CENTRAL_URL: http://central-server:4000
+    volumes:
+      - edge_bali_keys:/app/apps/edge-node/.keys
+    networks: [dwagon-net]
+    depends_on: [redis, central-server]
+
+  edge-sulawesi:
+    build:
+      context: .
+      dockerfile: apps/edge-node/Dockerfile
+    image: dwagon/edge-node:${IMAGE_TAG:-latest}
+    container_name: dwagon-edge-sulawesi
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 4005
+      REGION: sulawesi
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:?required}
+      CENTRAL_URL: http://central-server:4000
+    volumes:
+      - edge_sulawesi_keys:/app/apps/edge-node/.keys
+    networks: [dwagon-net]
+    depends_on: [redis, central-server]
+
+  edge-maluku:
+    build:
+      context: .
+      dockerfile: apps/edge-node/Dockerfile
+    image: dwagon/edge-node:${IMAGE_TAG:-latest}
+    container_name: dwagon-edge-maluku
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 4006
+      REGION: maluku
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:?required}
+      CENTRAL_URL: http://central-server:4000
+    volumes:
+      - edge_maluku_keys:/app/apps/edge-node/.keys
+    networks: [dwagon-net]
+    depends_on: [redis, central-server]
+
+  edge-papua:
+    build:
+      context: .
+      dockerfile: apps/edge-node/Dockerfile
+    image: dwagon/edge-node:${IMAGE_TAG:-latest}
+    container_name: dwagon-edge-papua
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 4007
+      REGION: papua
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:?required}
+      CENTRAL_URL: http://central-server:4000
+    volumes:
+      - edge_papua_keys:/app/apps/edge-node/.keys
+    networks: [dwagon-net]
+    depends_on: [redis, central-server]
+
+  # ============ FRONTEND ============
+  dashboard-ui:
+    build:
+      context: .
+      dockerfile: apps/dashboard-ui/Dockerfile
+    image: dwagon/dashboard-ui:${IMAGE_TAG:-latest}
+    container_name: dwagon-dashboard
+    restart: unless-stopped
+    networks: [dwagon-net]
+    depends_on:
+      - central-server
+
+  # ============ REVERSE PROXY ============
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: dwagon-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/certs:/etc/letsencrypt:ro
+      - ./nginx/www:/var/www/certbot:ro
+    networks: [dwagon-net]
+    depends_on:
+      - central-server
+      - dashboard-ui
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+  # ============ CERTBOT (Let's Encrypt auto-renew) ============
+  certbot:
+    image: certbot/certbot:latest
+    container_name: dwagon-certbot
+    restart: unless-stopped
+    volumes:
+      - ./nginx/certs:/etc/letsencrypt
+      - ./nginx/www:/var/www/certbot
+    entrypoint: /bin/sh -c "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done"
+    networks: [dwagon-net]
+
+networks:
+  dwagon-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  central_keys:
+  central_vapid:
+  edge_sumatera_keys:
+  edge_jawa_keys:
+  edge_kalimantan_keys:
+  edge_bali_keys:
+  edge_sulawesi_keys:
+  edge_maluku_keys:
+  edge_papua_keys:

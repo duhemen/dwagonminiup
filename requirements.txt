@@ -1,0 +1,468 @@
+# ============================================================================
+# DwagonMiniUp - Requirements Documentation
+# ============================================================================
+#
+# NOTE:
+#   File ini BUKAN requirements.txt Python.
+#   DwagonMiniUp adalah proyek Node.js + TypeScript yang menggunakan pnpm.
+#
+#   File ini dibuat untuk TUJUAN DOKUMENTASI:
+#   - Onboarding developer baru
+#   - Audit dependencies
+#   - Referensi cepat versi yang dipakai
+#
+#   Untuk installasi sebenarnya, jalankan:  pnpm install
+#   Source of truth: package.json di setiap workspace.
+#
+# ============================================================================
+
+# ============================================================
+# 1. SYSTEM REQUIREMENTS
+# ============================================================
+
+[Runtime]
+  Node.js               >= 20.0.0    (LTS recommended)
+  pnpm                  >= 8.0.0     (package manager)
+  Docker Desktop        >= 24.0.0    (containerization)
+  Docker Compose        >= 2.20.0
+  Git                   >= 2.40.0
+
+[OS Support]
+  Windows 10/11         (primary dev environment)
+  Ubuntu 22.04 LTS      (production server)
+  macOS 12+             (dev alternative)
+
+[Port Allocation]
+  5173                  Vite dev server (frontend)
+  4000                  Central Server
+  4001-4007             Edge Nodes (Sumatera - Papua)
+  5433                  PostgreSQL (via Docker)
+  6379                  Redis (via Docker)
+  5555                  Prisma Studio
+  80, 443               Nginx (production)
+
+# ============================================================
+# 2. BACKEND - central-server (apps/central-server/package.json)
+# ============================================================
+
+[Dependencies - Runtime]
+  fastify                       ^4.28.1     Web framework
+  @fastify/cors                 ^9.0.1      CORS plugin
+  @fastify/jwt                  ^8.0.1      JWT authentication
+  @prisma/client                ^5.20.0     ORM client
+  bcryptjs                      ^2.4.3      Password hashing
+  bullmq                        ^5.13.2     Queue system
+  ioredis                       ^5.4.1      Redis client
+  jsonwebtoken                  ^9.0.2      JWT signing
+  socket.io                     ^4.8.0      WebSocket server
+  web-push                      ^3.6.7      Web Push (VAPID)
+
+[Dependencies - Dev]
+  prisma                        ^5.20.0     Prisma CLI
+  tsx                           ^4.19.1     TypeScript exec
+  typescript                    ^5.6.2      TypeScript compiler
+  @types/bcryptjs               ^2.4.6
+  @types/jsonwebtoken           ^9.0.7
+  @types/node                   ^26.6.3
+  @types/web-push               ^3.6.4
+
+# ============================================================
+# 3. BACKEND - edge-node (apps/edge-node/package.json)
+# ============================================================
+
+[Dependencies - Runtime]
+  fastify                       ^4.28.1
+  @fastify/jwt                  ^8.0.1
+  bullmq                        ^5.13.2
+  ioredis                       ^5.4.1
+
+[Dependencies - Dev]
+  tsx                           ^4.19.1
+  typescript                    ^5.6.2
+
+# ============================================================
+# 4. FRONTEND - dashboard-ui (apps/dashboard-ui/package.json)
+# ============================================================
+
+[Dependencies - Runtime]
+  react                         ^18.3.1     UI library
+  react-dom                     ^18.3.1
+  react-router-dom              ^6.26.2     Routing
+  axios                         ^1.7.7      HTTP client
+  @tanstack/react-query         ^5.59.0     Server state
+  recharts                      ^2.13.0     Chart library
+  socket.io-client              ^4.8.0      WebSocket client
+
+[Dependencies - Dev]
+  vite                          ^5.4.8      Build tool
+  @vitejs/plugin-react          ^4.3.2
+  tailwindcss                   ^3.4.13     CSS framework
+  postcss                       ^8.4.47
+  autoprefixer                  ^10.4.20
+  typescript                    ^5.6.2
+  @types/react                  ^18.3.10
+  @types/react-dom              ^18.3.0
+
+# ============================================================
+# 5. SHARED PACKAGES (packages/*)
+# ============================================================
+
+[packages/shared-crypto]
+  tweetnacl                     ^1.0.3      Ed25519 crypto
+  tweetnacl-util                ^0.15.1     Base64 utils
+  @types/node                   ^20.0.0
+
+[packages/shared-types]
+  (TypeScript-only, no runtime deps)
+
+[packages/config]
+  (Configuration constants)
+
+# ============================================================
+# 6. DATABASE SCHEMA (36 Models)
+# ============================================================
+
+[Core]
+  User
+  Pelatihan
+  Usulan
+  Approval
+  Enrollment
+
+[System]
+  EdgeNode
+  Notification
+  ActivityLog
+  PushSubscription
+
+[Klop - Knowledge]
+  KnowledgeCategory
+  KnowledgeItem
+  KnowledgeComment
+  KnowledgeLike
+
+[Klop - E-Learning]
+  ElearningCategory
+  ElearningCourse
+  ElearningEnrollment
+
+[Klop - Community]
+  TalkshowEpisode
+  ForumTopic
+  ForumReply
+  Jurnal
+  JurnalArticle
+  CommunityWork
+
+[Kinerja - SKP]
+  SKP
+  SKPRHK
+  SKPEvaluation
+  SKPDocument
+  HKPengajuan
+  TTEDocument
+  PengaturanAtasan
+  DownloadDoc
+  VideoTutorial
+  RekapKompetensi
+  PembinaanKinerja
+
+[Layanan Publik]
+  Karyasiswa
+  Venue
+  VenueBooking
+  Ticket
+
+# ============================================================
+# 7. API ENDPOINTS SUMMARY (~85 endpoints)
+# ============================================================
+
+[Authentication - 3]
+  POST    /api/auth/login
+  POST    /api/auth/change-password
+  GET     /api/auth/me
+
+[Region & Edge - 8]
+  POST    /api/geo/detect
+  POST    /api/geo/lock
+  POST    /api/geo/unlock
+  GET     /api/geo/health
+  GET     /api/edge-registry
+  POST    /api/edge-registry/register
+  POST    /api/edge-registry/heartbeat
+  POST    /api/edge/usulan
+
+[Kinerja - SKP - 10]
+  GET     /api/kinerja/skp
+  GET     /api/kinerja/skp/current
+  GET     /api/kinerja/skp/:id
+  POST    /api/kinerja/skp
+  PATCH   /api/kinerja/skp/:id
+  POST    /api/kinerja/skp/:id/submit
+  GET     /api/kinerja/stats
+  GET     /api/kinerja/rekap
+  GET     /api/kinerja/documents
+  POST    /api/kinerja/documents/:id/download
+
+[Kinerja - HK - 4]
+  GET     /api/kinerja/hk
+  POST    /api/kinerja/hk
+  POST    /api/kinerja/hk/:id/submit
+  PATCH   /api/kinerja/hk/:id
+
+[Kinerja - TTE - 2]
+  GET     /api/kinerja/tte
+  POST    /api/kinerja/tte
+
+[Kinerja - Pengaturan - 3]
+  GET     /api/kinerja/pengaturan
+  POST    /api/kinerja/pengaturan
+  DELETE  /api/kinerja/pengaturan/:id
+
+[Kinerja - Downloads - 2]
+  GET     /api/kinerja/downloads
+  POST    /api/kinerja/downloads/:id/download
+
+[Kinerja - Video - 1]
+  GET     /api/kinerja/videos
+
+[Kinerja - Rekap Kompetensi - 2]
+  GET     /api/kinerja/rekap-kompetensi
+  GET     /api/kinerja/rekap-kompetensi/stats
+
+[Kinerja - Pembinaan - 4]
+  GET     /api/kinerja/pembinaan
+  GET     /api/kinerja/pembinaan/stats
+  POST    /api/kinerja/pembinaan
+  PATCH   /api/kinerja/pembinaan/:id
+
+[Klop - Knowledge - 6]
+  GET     /api/klop/categories
+  GET     /api/klop/knowledge
+  GET     /api/klop/knowledge/:id
+  GET     /api/klop/knowledge/:id/comments
+  POST    /api/klop/knowledge/:id/comments
+  POST    /api/klop/knowledge/:id/like
+  GET     /api/klop/stats
+
+[Klop - E-Learning - 7]
+  GET     /api/elearning/categories
+  GET     /api/elearning/courses
+  GET     /api/elearning/courses/:id
+  POST    /api/elearning/courses/:id/enroll
+  GET     /api/elearning/my-courses
+  GET     /api/elearning/stats
+  GET     /api/elearning/years
+  PATCH   /api/elearning/enrollments/:id/progress
+
+[Klop - Talkshow - 3]
+  GET     /api/talkshow
+  GET     /api/talkshow/:id
+  POST    /api/talkshow/:id/like
+
+[Klop - Forum - 6]
+  GET     /api/forum/topics
+  GET     /api/forum/topics/:id
+  POST    /api/forum/topics
+  POST    /api/forum/topics/:id/replies
+  POST    /api/forum/topics/:id/like
+  GET     /api/forum/stats
+
+[Klop - Jurnal - 4]
+  GET     /api/jurnal
+  GET     /api/jurnal/:id
+  GET     /api/jurnal/bidang
+  GET     /api/jurnal/years
+
+[Klop - Komunitas - 5]
+  GET     /api/komunitas
+  GET     /api/komunitas/:id
+  POST    /api/komunitas
+  PATCH   /api/komunitas/:id/submit
+  DELETE  /api/komunitas/:id
+
+[Karyasiswa - 3]
+  GET     /api/karyasiswa
+  POST    /api/karyasiswa
+  POST    /api/karyasiswa/:id/submit
+
+[SPASI - 5]
+  GET     /api/spasi/venues
+  GET     /api/spasi/venues/:id
+  GET     /api/spasi/bookings
+  POST    /api/spasi/bookings
+
+[Ticketing - 3]
+  GET     /api/ticketing
+  GET     /api/ticketing/stats
+  POST    /api/ticketing
+
+[Usulan - 5]
+  GET     /api/usulan
+  POST    /api/usulan
+  GET     /api/usulan/:id
+  GET     /api/usulan/pending/me
+  GET     /api/usulan/stats/me
+
+[Approval - 1]
+  PATCH   /api/usulan/:id/approve
+
+[Notification - 5]
+  GET     /api/notifications
+  GET     /api/notifications/unread-count
+  PATCH   /api/notifications/:id/read
+  PATCH   /api/notifications/read-all
+  DELETE  /api/notifications
+
+[Push - 4]
+  GET     /api/push/vapid-key
+  POST    /api/push/subscribe
+  POST    /api/push/unsubscribe
+  GET     /api/push/status
+
+[System - 5]
+  GET     /api/health
+  GET     /api/system/health
+  GET     /api/system/about
+  GET     /api/ws/stats
+  GET     /api/metrics/recent
+
+[Sync - 1]
+  GET     /api/sync/queue/stats
+
+# ============================================================
+# 8. DEPLOYMENT REQUIREMENTS
+# ============================================================
+
+[Server Spec - Central (Jakarta)]
+  CPU       8 vCPU
+  RAM       16 GB
+  Disk      100 GB SSD
+  OS        Ubuntu 22.04 LTS
+  Network   100 Mbps symmetric
+
+[Server Spec - Edge Node (per region)]
+  CPU       2 vCPU
+  RAM       4 GB
+  Disk      20 GB SSD
+  OS        Ubuntu 22.04 LTS
+  Network   50 Mbps symmetric
+
+[Server Spec - Edge Node (Jawa - high traffic)]
+  CPU       4 vCPU
+  RAM       8 GB
+  Disk      40 GB SSD
+
+[Ports Terbuka]
+  80        HTTP (public)
+  443       HTTPS (public)
+  Other     internal only (via Docker network)
+
+[Database]
+  PostgreSQL 15.x          Master DB
+  Redis 7.x                Cache + Queue
+
+[SSL/TLS]
+  Let's Encrypt            Free, auto-renew
+  TLS 1.2 + 1.3            Protocols
+  HSTS                     Enabled
+
+# ============================================================
+# 9. INSTALLATION CHECKLIST
+# ============================================================
+
+Prerequisites:
+  [ ] Node.js 20+ installed       (node --version)
+  [ ] pnpm 8+ installed           (pnpm --version)
+  [ ] Docker Desktop running      (docker ps)
+  [ ] Git installed               (git --version)
+
+Setup:
+  [ ] Clone repository
+  [ ] Run: pnpm install
+  [ ] Run: pnpm approve-builds    (pilih 'a' → Enter)
+  [ ] Copy .env.example → .env
+  [ ] Run: docker-compose up -d postgres redis
+  [ ] Run: npx prisma db push --accept-data-loss
+  [ ] Run: npx prisma generate
+  [ ] Run: npx tsx prisma/seed.ts
+
+Run Services:
+  [ ] Terminal 1: pnpm --filter central-server dev
+  [ ] Terminal 2: .\start-all-edges.ps1
+  [ ] Terminal 3: pnpm --filter dashboard-ui dev
+
+Verify:
+  [ ] http://localhost:4000/api/health    → {"status":"ok"}
+  [ ] http://localhost:4001/api/health    → region: sumatera
+  [ ] http://localhost:4007/api/health    → region: papua
+  [ ] http://localhost:5173               → Login page muncul
+  [ ] Login: emen@dwagon.id / demo123     → Berhasil masuk
+
+# ============================================================
+# 10. DEMO ACCOUNTS
+# ============================================================
+
+  Role              Email                       Password
+  ------            -----                       --------
+  Pegawai           emen@dwagon.id              demo123
+  Pimpinan          pimpinan@dwagon.id          demo123
+  Admin UPT         upt@dwagon.id               demo123
+  Admin Kepegawaian kepegawaian@dwagon.id       demo123
+
+# ============================================================
+# 11. USEFUL COMMANDS
+# ============================================================
+
+  # Development
+  pnpm install                                 Install deps
+  pnpm --filter central-server dev             Start central
+  pnpm --filter edge-node dev                  Start 1 edge
+  .\start-all-edges.ps1                        Start 7 edges
+  pnpm --filter dashboard-ui dev               Start frontend
+
+  # Database
+  npx prisma db push                           Sync schema
+  npx prisma generate                          Regen client
+  npx prisma studio                            GUI at :5555
+  npx tsx prisma/seed.ts                       Seed data
+
+  # Docker
+  docker-compose up -d postgres redis          Start DB
+  docker-compose down                          Stop all
+  docker ps                                    Check status
+
+  # Production
+  .\deploy.ps1 init                            Init prod env
+  .\deploy.ps1 build                           Build images
+  .\deploy.ps1 up                              Start all
+  .\deploy.ps1 backup                          Backup DB
+  .\deploy.ps1 ssl                             Request SSL
+
+  # Troubleshoot
+  Get-Process node | Stop-Process -Force       Kill all node
+  docker logs dwagon-postgres                  View PG logs
+  docker exec -it dwagon-postgres psql -U dwagon -d dwagon    DB shell
+
+# ============================================================
+# 12. TESTING (Future)
+# ============================================================
+
+[Unit Tests]
+  vitest                        (planned)
+  @testing-library/react        (planned)
+
+[E2E Tests]
+  playwright                    (planned)
+  cypress                       (planned)
+
+[Load Tests]
+  k6                            (planned)
+  artillery                     (planned)
+
+# ============================================================
+# END OF REQUIREMENTS
+# ============================================================
+
+Built with love by Mashul Aditama Pradana & DeepSeek (The Great One)
+Last updated: 2026-09-29

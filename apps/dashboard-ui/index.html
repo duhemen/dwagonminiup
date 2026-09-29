@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>DwagonMiniUp — Portal Kepegawaian</title>
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#2563eb" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="DwagonMiniUp" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icon-96.png" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // SW hanya aktif di production (dev tidak pakai SW biar tidak stuck cache)
+      const isProduction = location.hostname !== 'localhost'
+                        && location.hostname !== '127.0.0.1'
+                        && !location.port;
+
+      if ('serviceWorker' in navigator && isProduction) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js', { scope: '/' })
+            .then((reg) => console.log('[pwa] SW registered:', reg.scope))
+            .catch((err) => console.warn('[pwa] SW registration failed:', err));
+        });
+      } else {
+        // Dev mode: pastikan SW lama dibersihkan kalau ada
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then((regs) => {
+            regs.forEach((r) => r.unregister());
+          });
+        }
+      }
+    </script>
+  </body>
+</html>

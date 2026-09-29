@@ -1,0 +1,21 @@
+{
+  "name": "dwagonminiup",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "build": "pnpm -r build",
+    "start": "pnpm -r start"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "devDependencies": {
+    "prisma": "5.22.0",
+    "tsx": "4.19.1"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3"
+  }
+}
