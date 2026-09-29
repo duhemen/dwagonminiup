@@ -130,30 +130,41 @@ Bayangkan **restoran franchise** alih-alih restoran tunggal:
 ### 🗺️ Peta Deployment
 
 ```
-                          ┌────────────────────────────────┐
-                          │   CENTRAL SERVER (Jakarta)     │
-                          │   ━━━━━━━━━━━━━━━━━━━━━━━━━    │
-                          │   ✓ PostgreSQL Master          │
-                          │   ✓ JWT Auth + SSO             │
-                          │   ✓ BullMQ Central Worker      │
-                          │   ✓ WebSocket Server           │
-                          │   ✓ Edge Registry              │
-                          └──────────────┬─────────────────┘
-                                         │
-              ┌──────────────────────────┼──────────────────────────┐
-              │            │             │             │            │
-              ▼            ▼             ▼             ▼            ▼
-      ┌─────────────┐ ┌─────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐
-      │   SUMATERA  │ │  JAWA   │ │KALIMANTAN│ │ SULAWESI │ │  PAPUA   │
-      │   :4001     │ │  :4002  │ │  :4003   │ │  :4005   │ │  :4007   │
-      │  10 prov    │ │ 6 prov  │ │ 5 prov   │ │ 6 prov   │ │ 6 prov   │
-      └──────┬──────┘ └────┬────┘ └────┬─────┘ └────┬─────┘ └─────┬────┘
-             │             │            │            │            │
-        ┌────▼────┐   ┌────▼────┐  ┌────▼────┐  ┌────▼────┐  ┌───▼────┐
-        │  Users  │   │  Users  │  │  Users  │  │  Users  │  │ Users  │
-        │  Medan  │   │ Jakarta │  │Balikpapan│ │Makassar  │  │Jayapura│
-        └─────────┘   └─────────┘  └─────────┘  └─────────┘  └────────┘
+                              ┌────────────────────────────────┐
+                              │   CENTRAL SERVER (Jakarta)     │
+                              │   ━━━━━━━━━━━━━━━━━━━━━━━━━    │
+                              │   ✓ PostgreSQL Master          │
+                              │   ✓ JWT Auth + SSO             │
+                              │   ✓ BullMQ Central Worker      │
+                              │   ✓ WebSocket Server           │
+                              │   ✓ Edge Registry              │
+                              └──────────────┬─────────────────┘
+                                             │
+     ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐
+     │ SUMATERA │ │   JAWA   │ │KALIMANTAN│ │BALI-NUSRA│ │ SULAWESI │ │  MALUKU  │ │  PAPUA   │
+     │  :4001   │ │  :4002   │ │  :4003   │ │  :4004   │ │  :4005   │ │  :4006   │ │  :4007   │
+     │ 10 prov  │ │  6 prov  │ │  5 prov  │ │  3 prov  │ │  6 prov  │ │  2 prov  │ │  6 prov  │
+     └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘
+          │            │            │            │            │            │            │
+     ┌────▼─────┐ ┌────▼─────┐ ┌────▼─────┐ ┌────▼─────┐ ┌────▼─────┐ ┌────▼─────┐ ┌────▼─────┐
+     │  Medan   │ │ Jakarta  │ │Balikpapan│ │ Denpasar │ │ Makassar │ │  Ambon   │ │ Jayapura │
+     │  Users   │ │  Users   │ │  Users   │ │  Users   │ │  Users   │ │  Users   │ │  Users   │
+     └──────────┘ └──────────┘ └──────────┘ └──────────┘ └──────────┘ └──────────┘ └──────────┘
 ```
+**Coverage:** 7 edge nodes × **38 provinsi Indonesia** — tidak ada wilayah yang terlewat 🇮🇩
+
+| # | Region | Port | Provinsi | Ibu Kota Edge | Flag |
+|---|---|---|---|---|---|
+| 1 | **Sumatera** | `:4001` | 10 | Medan | 🌴 |
+| 2 | **Jawa** | `:4002` | 6 | Jakarta | 🏙️ |
+| 3 | **Kalimantan** | `:4003` | 5 | Balikpapan | 🌳 |
+| 4 | **Bali-Nusra** | `:4004` | 3 | Denpasar | 🏖️ |
+| 5 | **Sulawesi** | `:4005` | 6 | Makassar | 🦋 |
+| 6 | **Maluku** | `:4006` | 2 | Ambon | 🐚 |
+| 7 | **Papua** | `:4007` | 6 | Jayapura | 🐦 |
+| | **TOTAL** | | **38** | **7 edge nodes** | 🇮🇩 |
+
+**Distribusi beban:** Setiap edge node melayani provinsi di wilayahnya masing-masing, dengan fallback chain ke edge terdekat jika terjadi gangguan. **Tidak ada region yang menjadi "warga kelas dua"** — semua dapat perhatian yang sama.
 
 ### ✨ Keunggulan Arsitektur Ini
 
